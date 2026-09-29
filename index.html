@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e7c66">
+<title>NY AKAMA — Gestion Vente & Stock</title>
+<style>
+:root{
+  --bg:#eef2f5; --card:#ffffff; --txt:#0f172a; --muted:#64748b;
+  --pri:#0e7c66; --pri-d:#0a5f4f; --pri-l:#e6f4f0;
+  --acc:#f59e0b; --danger:#e11d48; --blue:#2563eb;
+  --line:#e2e8f0; --r:16px; --sh:0 2px 10px rgba(15,23,42,.06);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;background:var(--bg);color:var(--txt);padding-bottom:40px;font-size:15px}
+img{display:block;max-width:100%}
+button,input,select,textarea{font-family:inherit;font-size:15px}
+
+/* ---------- ÉCRAN DE CONNEXION ---------- */
+#loginScreen{
+  position:fixed;inset:0;z-index:500;display:none;
+  background:linear-gradient(135deg,#0a5f4f 0%,#0e7c66 50%,#12907a 100%);
+  align-items:center;justify-content:center;padding:20px;overflow-y:auto;
+}
+#loginScreen.on{display:flex}
+.login-card{
+  background:#fff;border-radius:22px;padding:28px 22px;
+  max-width:400px;width:100%;text-align:center;
+  box-shadow:0 20px 50px rgba(0,0,0,.3);
+  animation:pop .35s ease;
+}
+@keyframes pop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.login-logo{
+  width:110px;height:110px;margin:0 auto 12px;background:#fff;
+  border-radius:16px;padding:6px;display:grid;place-items:center;
+  box-shadow:0 4px 14px rgba(0,0,0,.1);border:1px solid var(--line);
+}
+.login-logo img{width:100%;height:100%;object-fit:contain}
+.login-logo svg{width:100%;height:100%;color:#0a5f4f}
+.login-card h1{
+  margin:0;font-family:Georgia,serif;font-size:24px;font-weight:800;
+  letter-spacing:3px;color:var(--pri-d);
+}
+.login-card .sub{
+  color:var(--muted);font-size:12.5px;letter-spacing:2px;
+  text-transform:uppercase;margin:4px 0 22px;font-weight:600;
+}
+.login-card .frm{text-align:left}
+.login-card label{margin-top:10px}
+.login-card .login-btn{
+  width:100%;padding:14px;margin-top:16px;border:none;border-radius:12px;
+  background:linear-gradient(135deg,var(--pri),#12907a);color:#fff;
+  font-weight:800;font-size:15px;cursor:pointer;letter-spacing:.3px;
+  box-shadow:0 4px 14px rgba(14,124,102,.35);transition:.15s;
+}
+.login-card .login-btn:active{transform:scale(.97)}
+.login-card .login-btn:disabled{opacity:.6}
+.login-error{
+  background:#fee2e2;color:#b91c1c;padding:10px 12px;border-radius:10px;
+  font-size:13px;font-weight:600;margin-top:14px;text-align:left;display:none;
+}
+.login-error.on{display:block}
+.login-alt{
+  font-size:12.5px;color:var(--muted);margin-top:18px;
+}
+.login-alt a{
+  color:var(--pri);font-weight:700;cursor:pointer;text-decoration:none;
+}
+.login-alt a:hover{text-decoration:underline}
+.login-secure{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-top:18px;font-size:11.5px;color:var(--muted);
+}
+
+/* ---------- HEADER ---------- */
+header.top{
+  position:sticky;top:0;z-index:60;
+  background:linear-gradient(135deg,var(--pri-d),var(--pri));
+  color:#fff;padding:10px 14px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 4px 16px rgba(10,95,79,.25);
+}
+.logo{
+  width:48px;height:48px;flex:0 0 auto;background:#fff;border-radius:12px;
+  padding:3px;display:grid;place-items:center;overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+.logo img{width:100%;height:100%;object-fit:contain}
+.logo svg{width:100%;height:100%;color:#0a5f4f}
+.brand h1{margin:0;font-size:16px;font-weight:700;font-family:Georgia,serif;letter-spacing:.3px}
+.brand p{margin:1px 0 0;font-size:11px;opacity:.85}
+header.top .spacer{flex:1}
+.ic{
+  width:38px;height:38px;border-radius:11px;border:1px solid rgba(255,255,255,.25);
+  background:rgba(255,255,255,.12);color:#fff;font-size:16px;cursor:pointer;
+  display:grid;place-items:center;transition:.15s;
+}
+.ic:active{transform:scale(.94)}
+.ic.on{background:#22c55e;border-color:#22c55e}
+
+/* ---------- TABS ---------- */
+nav.tabs{
+  position:sticky;top:68px;z-index:55;display:flex;gap:8px;overflow-x:auto;
+  padding:10px 12px;background:var(--bg);scrollbar-width:none;
+  border-bottom:1px solid var(--line);
+}
+nav.tabs::-webkit-scrollbar{display:none}
+.tab{
+  flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--muted);
+  padding:8px 14px;border-radius:999px;cursor:pointer;font-size:13.5px;font-weight:600;
+  display:flex;align-items:center;gap:6px;transition:.15s;white-space:nowrap;
+}
+.tab.on{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 4px 12px rgba(14,124,102,.3)}
+
+/* ---------- LAYOUT ---------- */
+main{padding:14px;max-width:1100px;margin:0 auto}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:14px;margin-bottom:14px}
+.card h2{margin:0 0 12px;font-size:15.5px;font-weight:700;display:flex;align-items:center;gap:8px}
+.card h2 .r{margin-left:auto;font-weight:500;font-size:13px;color:var(--muted)}
+
+/* ---------- HERO LOGO ---------- */
+.hero-logo{
+  background:linear-gradient(135deg,#0a5f4f,#0e7c66 60%,#12907a);
+  color:#fff;border-radius:20px;padding:22px 18px 18px;margin-bottom:14px;
+  text-align:center;box-shadow:0 8px 26px rgba(10,95,79,.28);
+  position:relative;overflow:hidden;
+}
+.hero-logo:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%, rgba(255,255,255,.12), transparent 70%)}
+.hero-logo .emblem-img{
+  width:180px;height:180px;margin:0 auto;display:block;background:#fff;
+  border-radius:16px;padding:8px;position:relative;object-fit:contain;
+  box-shadow:0 6px 20px rgba(0,0,0,.25);
+}
+.hero-logo .emblem{width:130px;height:130px;margin:0 auto;display:block;color:#fff;position:relative}
+.hero-logo .title{
+  font-family:Georgia,'Times New Roman',serif;
+  font-size:30px;font-weight:800;letter-spacing:4px;margin:10px 0 0;
+  text-shadow:0 2px 10px rgba(0,0,0,.25);position:relative;
+}
+.hero-logo .flourish{display:flex;align-items:center;justify-content:center;gap:10px;color:rgba(255,255,255,.65);font-size:14px;margin:2px 0;position:relative}
+.hero-logo .flourish:before,.hero-logo .flourish:after{content:"";flex:1;max-width:80px;height:1px;background:linear-gradient(to right, transparent, rgba(255,255,255,.6), transparent)}
+.hero-logo .sub{font-size:11px;letter-spacing:4px;text-transform:uppercase;opacity:.85;margin-top:6px;font-weight:600;position:relative}
+
+/* ---------- KPI ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.kpi{background:var(--card);border-radius:14px;padding:13px;box-shadow:var(--sh);border-left:4px solid var(--pri)}
+.kpi .lbl{font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.kpi .val{font-size:19px;font-weight:800;margin-top:5px;letter-spacing:-.3px}
+.kpi .sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.kpi.acc{border-left-color:var(--acc)}.kpi.blue{border-left-color:var(--blue)}
+.kpi.red{border-left-color:var(--danger)}.kpi.grn{border-left-color:#16a34a}
+
+/* ---------- CHART ---------- */
+.chart{display:flex;align-items:flex-end;gap:8px;height:150px;padding-top:18px}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;gap:4px}
+.bar{width:100%;max-width:38px;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,var(--pri),#14b8a6)}
+.bar-val{font-size:10px;color:var(--muted);font-weight:700}
+.bar-lbl{font-size:11px;color:var(--muted);font-weight:600}
+
+/* ---------- GRID ARTICLES ---------- */
+.grid-art{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.sale-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.price-mode{display:flex;gap:6px;overflow-x:auto}.price-mode .btn{flex:1;min-width:108px}.price-mode .btn.on{background:var(--pri);color:#fff;border-color:var(--pri)}.price-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 7px;border-radius:7px;font-size:10px;font-weight:800;background:var(--pri-l);color:var(--pri);white-space:nowrap}
+.art-btn{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;
+  cursor:pointer;display:flex;flex-direction:column;gap:6px;text-align:left;
+  transition:.15s;box-shadow:var(--sh);overflow:hidden;
+}
+.art-btn:active{transform:scale(.96);border-color:var(--pri)}
+.art-btn img,.art-btn .ph{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:10px;background:#f1f5f9}
+.art-btn .ph{display:grid;place-items:center;font-size:26px;font-weight:800;color:var(--pri);background:var(--pri-l)}
+.art-btn .n{font-size:12.5px;font-weight:700;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:30px}
+.art-btn .p{font-size:12.5px;font-weight:800;color:var(--pri)}.art-btn .prices{display:flex;gap:4px;flex-wrap:wrap}.art-btn .pg{color:#b45309}.art-btn.out{opacity:.55;filter:grayscale(.5)}
+.art-btn .s{font-size:10.5px;color:var(--muted)}
+.badge{display:inline-block;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase;letter-spacing:.3px}
+.badge.verre{background:#dbeafe;color:#1d4ed8}
+.badge.plastique{background:#ffedd5;color:#c2410c}
+.badge.low{background:#fee2e2;color:#b91c1c}
+.badge.marge{background:#dcfce7;color:#15803d}
+.badge.marge-low{background:#fef3c7;color:#b45309}
+
+/* ---------- LISTES ---------- */
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:none}
+.row .thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:#f1f5f9;flex:0 0 auto}
+.row .thumb.ph{display:grid;place-items:center;font-weight:800;color:var(--pri);background:var(--pri-l)}
+.row .info{flex:1;min-width:0}
+.row .info b{display:block;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .info small{color:var(--muted);font-size:12px}
+.row .amt{font-weight:800;font-size:14px;white-space:nowrap}
+.row .amt.neg{color:var(--danger)}
+.row .amt.pos{color:#16a34a}
+
+/* ---------- FORMULAIRES ---------- */
+label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:#f8fafc;outline:none;transition:.15s;color:var(--txt)}
+input:focus,select:focus,textarea:focus{border-color:var(--pri);background:#fff;box-shadow:0 0 0 3px rgba(14,124,102,.12)}
+.frm{display:flex;flex-direction:column;gap:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.inline-form{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+
+/* ---------- MARGE ---------- */
+.marge-box{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;background:#dcfce7;color:#15803d;font-weight:700;font-size:14px;transition:.2s}
+.marge-box.neg{background:#fee2e2;color:#b91c1c}
+.marge-box.low{background:#fef3c7;color:#b45309}
+.marge-box .m-lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;opacity:.8;display:block}
+.marge-box .m-val{font-size:17px;font-weight:800}
+.marge-box .m-pct{font-size:13px;font-weight:700;opacity:.85}
+
+/* ---------- BOUTONS ---------- */
+.btn{border:none;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;background:#e2e8f0;color:var(--txt);transition:.15s;font-size:14.5px;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:linear-gradient(135deg,var(--pri),#12907a);color:#fff;box-shadow:0 4px 14px rgba(14,124,102,.3)}
+.btn.acc{background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff}
+.btn.danger{background:#fee2e2;color:var(--danger)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.btn.sm{padding:7px 12px;font-size:13px;border-radius:9px}
+.btn.blk{width:100%}
+.btn:disabled{opacity:.5;pointer-events:none}
+
+/* ---------- PANIER ---------- */
+.cart-bar{position:fixed;left:0;right:0;bottom:0;z-index:70;background:var(--card);border-top:1px solid var(--line);padding:12px 14px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -6px 22px rgba(15,23,42,.12);display:flex;align-items:center;gap:12px;transform:translateY(110%);transition:transform .25s}
+.cart-bar.on{transform:translateY(0)}
+.cart-bar .tot{flex:1}
+.cart-bar .tot small{display:block;font-size:11px;color:var(--muted);font-weight:600}
+.cart-bar .tot b{font-size:19px;font-weight:800;color:var(--pri)}
+.cart-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.cart-item .nm{flex:1;font-size:13.5px;font-weight:600}
+.qty{display:flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.qty button{width:30px;height:30px;border:none;background:#f1f5f9;font-size:16px;font-weight:800;cursor:pointer;color:var(--pri)}
+.qty span{min-width:32px;text-align:center;font-weight:800;font-size:13.5px}
+
+/* ---------- MODALE ---------- */
+#modalRoot{position:fixed;inset:0;z-index:200;display:none}
+#modalRoot.on{display:block}
+.overlay{position:absolute;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:center;padding:0}
+@media(min-width:600px){.overlay{align-items:center;padding:20px}}
+.modal{background:var(--card);width:100%;max-width:520px;max-height:92vh;overflow-y:auto;border-radius:22px 22px 0 0;padding:18px;animation:up .25s ease}
+@media(min-width:600px){.modal{border-radius:20px}}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal h3{margin:0 0 14px;font-size:17px;font-weight:800}
+.modal-foot{display:flex;gap:10px;margin-top:18px}
+.modal-foot .btn{flex:1}
+.imgpick{display:flex;gap:12px;align-items:center}
+.imgpick img{width:84px;height:84px;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
+.imgpick .btns{display:flex;flex-direction:column;gap:8px}
+.logo-prev{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+.logo-prev img{max-height:140px;margin:0 auto;object-fit:contain}
+.logo-prev .placeholder{font-size:11.5px;color:var(--muted);padding:22px 8px}
+.empty{text-align:center;padding:34px 14px;color:var(--muted);font-size:13.5px}
+.empty .em{font-size:34px;display:block;margin-bottom:8px;opacity:.5}
+#toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:11px 20px;border-radius:999px;font-size:13.5px;font-weight:600;z-index:300;opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.hint{font-size:11.5px;color:var(--muted);background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:8px 10px}.alert{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:11px 14px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.user-chip{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);padding:6px 10px;border-radius:10px;font-size:11.5px;font-weight:600;display:flex;align-items:center;gap:6px;max-width:140px;overflow:hidden}
+.user-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- TICKET ---------- */
+#ticket{display:none}
+.rcpt{font-family:'Courier New',monospace;font-size:12px;line-height:1.45;color:#000;background:#fff;padding:8px}
+.rcpt .c{text-align:center}
+.rcpt .r{display:flex;justify-content:space-between;gap:8px}
+.rcpt .b{font-weight:700}
+.rcpt .sep{border-top:1px dashed #000;margin:6px 0}
+.rcpt .big{font-size:15px}
+.rcpt .logo-t{text-align:center;margin:0 0 6px}
+.rcpt .logo-t img{max-width:74mm;max-height:32mm;margin:0 auto;object-fit:contain;filter:grayscale(1) contrast(1.4)}
+.rcpt .logo-t svg{width:60mm;height:auto;color:#000;display:inline-block}
+.rcpt .brand{text-align:center;font-family:Georgia,serif;font-size:16px;font-weight:800;letter-spacing:3px;margin:2px 0}
+
+@media(max-width:520px){main{padding:10px}.card{padding:12px;border-radius:14px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:1fr}.grid-art{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.art-btn{padding:7px}.hero-logo .emblem-img{width:145px;height:145px}.hero-logo .title{font-size:25px}.user-chip{display:none}.cart-item{gap:7px}.cart-item .nm{font-size:12.5px}}
+@media print{
+  body{background:#fff}
+  body>*:not(#ticket){display:none !important}
+  #ticket{display:block !important;width:72mm;margin:0;padding:0}
+  @page{size:80mm auto;margin:3mm}
+}
+@media print and (max-width:70mm){#ticket{width:56mm}@page{size:58mm auto;margin:2mm}.rcpt{font-size:10px}.rcpt .big{font-size:13px}.rcpt .logo-t img{max-width:52mm}}.print58 #ticket{width:56mm}.print58 .rcpt{font-size:10px}.print58 .rcpt .big{font-size:13px}.print58 .rcpt .logo-t img{max-width:52mm}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     LOGO SVG DE SECOURS NY AKAMA
+     ============================================================ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="nyakamaLogo" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="200" cy="140" r="118" fill="none" stroke="currentColor" stroke-width="4"/>
+    <g fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round">
+      <path d="M150 92 Q108 40 118 8"/>
+      <path d="M156 92 Q128 24 150 4"/>
+      <path d="M162 92 Q144 20 178 6"/>
+      <path d="M170 94 Q158 30 194 8"/>
+      <path d="M140 106 Q92 78 74 40"/>
+      <path d="M136 118 Q88 100 68 70"/>
+    </g>
+    <ellipse cx="205" cy="108" rx="46" ry="10" fill="currentColor"/>
+    <path d="M172 108 Q174 66 205 62 Q236 66 238 108 Z" fill="currentColor"/>
+    <path d="M172 108 L152 104 L158 96 L238 96 L242 104 Z" fill="currentColor"/>
+    <path d="M182 118 Q182 102 200 100 Q215 100 222 112 L228 122 L222 124 L226 132 L222 138 Q215 144 205 144 L188 142 Q182 136 182 118 Z" fill="currentColor"/>
+    <circle cx="208" cy="118" r="2.6" fill="#fff"/>
+    <path d="M188 142 L228 140 L232 158 L182 160 Z" fill="currentColor"/>
+    <path d="M148 178 Q150 156 182 152 L242 148 Q272 154 276 180 L282 262 L138 262 Z" fill="currentColor"/>
+    <path d="M238 160 L340 200" stroke="currentColor" stroke-width="16" stroke-linecap="round"/>
+    <circle cx="342" cy="200" r="12" fill="currentColor"/>
+    <path d="M268 168 Q290 172 300 188" stroke="currentColor" stroke-width="16" fill="none" stroke-linecap="round"/>
+    <g transform="translate(200 290)" fill="currentColor">
+      <path d="M0 -22 L6 -6 L16 -14 L10 0 L24 4 L12 10 L22 22 L8 16 L4 30 L0 22 L-4 30 L-8 16 L-22 22 L-12 10 L-24 4 L-10 0 L-16 -14 L-6 -6 Z"/>
+      <circle cx="0" cy="0" r="4.5" fill="#fff"/>
+      <circle cx="0" cy="0" r="2" fill="currentColor"/>
+    </g>
+    <g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+      <path d="M180 292 Q150 282 132 296 Q116 308 132 316 Q146 322 152 308"/>
+      <path d="M220 292 Q250 282 268 296 Q284 308 268 316 Q254 322 248 308"/>
+      <path d="M100 296 Q64 290 46 300 Q30 308 44 318 Q60 324 70 314"/>
+      <path d="M300 296 Q336 290 354 300 Q370 308 356 318 Q340 324 330 314"/>
+    </g>
+    <text x="200" y="372" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+          font-size="66" font-weight="800" fill="currentColor" letter-spacing="6">NY AKAMA</text>
+    <g transform="translate(200 388) scale(1,-0.7)" fill="currentColor" opacity=".85">
+      <path d="M0 -22 L6 -6 L16 -14 L10 0 L24 4 L12 10 L22 22 L8 16 L4 30 L0 22 L-4 30 L-8 16 L-22 22 L-12 10 L-24 4 L-10 0 L-16 -14 L-6 -6 Z"/>
+      <circle cx="0" cy="0" r="4" fill="#fff"/>
+    </g>
+  </symbol>
+</svg>
+
+<!-- ============================================================
+     ÉCRAN DE CONNEXION
+     ============================================================ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo" id="loginLogo"></div>
+    <h1 id="loginCompany">NY AKAMA</h1>
+    <div class="sub">Vente &amp; Gestion</div>
+
+    <div class="frm">
+      <div>
+        <label>Adresse email</label>
+        <input type="email" id="loginEmail" placeholder="vous@exemple.com" autocomplete="email">
+      </div>
+      <div>
+        <label>Mot de passe</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="login-btn" id="btnLogin">🔐 Se connecter</button>
+      <div class="login-error" id="loginError"></div>
+      <button class="btn ghost blk" id="btnOffline" style="margin-top:10px">📱 Continuer en mode hors ligne</button>
+      <button type="button" class="btn ghost blk" id="btnFirebaseSetup" onclick="openFirebaseSetup();return false;" style="margin-top:8px;position:relative;z-index:5;touch-action:manipulation">⚙️ Configurer Firebase</button>
+      <div class="login-alt">
+        Première utilisation ?
+        <a id="btnSignup">Créer un compte administrateur</a>
+      </div>
+      <div class="login-secure">
+        <span>🔒</span>
+        <span id="loginSecureText">Connexion sécurisée via Firebase</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     APPLICATION
+     ============================================================ -->
+<header class="top">
+  <div class="logo" id="hLogo"></div>
+  <div class="brand">
+    <h1 id="hCompany">NY AKAMA</h1>
+    <p id="hDate">—</p>
+  </div>
+  <div class="spacer"></div>
+  <div class="user-chip" id="userChip" title="Utilisateur connecté">
+    <span>👤</span><span id="userEmail">...</span>
+  </div>
+  <button class="ic" id="btnSync" title="Sauvegarde en ligne">☁</button>
+  <button class="ic" id="btnSettings" title="Paramètres">⚙</button>
+  <button class="ic" id="btnLogout" title="Se déconnecter">⏻</button>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+<main id="app"></main>
+
+<div class="cart-bar" id="cartBar">
+  <div class="tot"><small id="cartCount">0 article</small><b id="cartTotal">0</b></div>
+  <button class="btn pri" id="btnSaveVente">✓ Enregistrer</button>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toast"></div>
+<div id="ticket"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+/* =========================================================
+   NY AKAMA — Application de gestion (avec authentification)
+   ========================================================= */
+
+const COLS = ['articles','clients','ventes','productions','depenses'];
+
+const S = {
+  view: 'dash',
+  articles: [], clients: [], ventes: [], productions: [], depenses: [],
+  settings: {
+    company: 'NY AKAMA', phone: '', currency: 'FC', seuil: 10, logo: '',
+    fb: { apiKey:'', authDomain:'', projectId:'', storageBucket:'', messagingSenderId:'', appId:'' }
+  }
+};
+let cart = [];
+let priceMode = 'auto'; // auto | detail | gros
+let selClient = '';
+let searchArt = '';
+let db = null;
+let auth = null;
+let currentUser = null;
+let offlineMode = false;
+
+const $  = (s,r=document)=>r.querySelector(s);
+const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = n => { const v = Number(n); return isFinite(v)?v:0; };
+const fmt = n => (Math.round(num(n)*100)/100).toLocaleString('fr-FR');
+const money = n => fmt(n)+' '+S.settings.currency;
+const dk = d => { const x=new Date(d); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
+const todayKey = ()=>dk(new Date());
+
+/* ---------- PRIX DÉTAIL / GROS ---------- */
+function normalizeArticle(a){
+  if(!a) return a;
+  if(a.pvDetail===undefined) a.pvDetail = num(a.pv);
+  if(a.pvGros===undefined) a.pvGros = num(a.pvDetail);
+  if(a.seuilGros===undefined) a.seuilGros = num(a.seuilGros || S.settings.seuil || 10) || 10;
+  return a;
+}
+function saleModeFor(a,qte,mode=priceMode){
+  normalizeArticle(a);
+  if(mode==='detail') return 'detail';
+  if(mode==='gros') return 'gros';
+  return num(qte) >= Math.max(1,num(a.seuilGros)) ? 'gros' : 'detail';
+}
+function salePrice(a,qte,mode=priceMode){
+  normalizeArticle(a);
+  return saleModeFor(a,qte,mode)==='gros' ? num(a.pvGros) : num(a.pvDetail);
+}
+function priceLabel(a,qte,mode=priceMode){ return saleModeFor(a,qte,mode)==='gros' ? 'GROS' : 'DÉTAIL'; }
+function normalizeAllArticles(){
+  let changed=false; S.articles.forEach(a=>{ const before=JSON.stringify([a.pvDetail,a.pvGros,a.seuilGros]); normalizeArticle(a); if(JSON.stringify([a.pvDetail,a.pvGros,a.seuilGros])!==before){ put('articles',a); changed=true; } }); return changed;
+}
+
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('on'), 2200);
+}
+
+/* ---------- LOGO ---------- */
+function logoHTML(size='100%', forTicket=false){
+  if(S.settings.logo){
+    const filter = forTicket ? 'style="filter:grayscale(1) contrast(1.4)"' : '';
+    return `<img src="${S.settings.logo}" alt="NY AKAMA" ${filter} style="width:${size};height:${size};object-fit:contain;display:block">`;
+  }
+  return `<svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" style="width:${size};height:${size};display:block;color:inherit"><use href="#nyakamaLogo"/></svg>`;
+}
+
+/* ---------- STOCKAGE LOCAL ---------- */
+function loadLocal(){
+  COLS.forEach(c=>{ try{ S[c] = JSON.parse(localStorage.getItem('nyakama:'+c)) || []; }catch(e){ S[c]=[]; } });
+  try{ const st = JSON.parse(localStorage.getItem('nyakama:settings')); if(st) S.settings = Object.assign(S.settings, st); }catch(e){}
+  S.articles.forEach(normalizeArticle);
+}
+function saveLocal(col){ try{ localStorage.setItem('nyakama:'+col, JSON.stringify(S[col])); }catch(e){} }
+function saveSettings(){ try{ localStorage.setItem('nyakama:settings', JSON.stringify(S.settings)); }catch(e){} }
+
+/* ---------- ÉCRITURE ---------- */
+function put(col, obj){
+  const i = S[col].findIndex(x=>x.id===obj.id);
+  if(i>=0) S[col][i]=obj; else S[col].push(obj);
+  saveLocal(col);
+  if(db){ try{ db.collection(col).doc(obj.id).set(JSON.parse(JSON.stringify(obj))).catch(()=>{}); }catch(e){} }
+}
+function del(col, id){
+  S[col] = S[col].filter(x=>x.id!==id);
+  saveLocal(col);
+  if(db){ try{ db.collection(col).doc(id).delete().catch(()=>{}); }catch(e){} }
+}
+
+/* ---------- FIREBASE ---------- */
+function initFirebase(){
+  const cfg = S.settings.fb || {};
+  if(!cfg.apiKey || typeof firebase === 'undefined') return false;
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(cfg);
+    db = firebase.firestore();
+    auth = firebase.auth();
+    try{ db.enablePersistence({synchronizeTabs:true}).catch(()=>{}); }catch(e){}
+
+    // Surveiller l'état de connexion
+    auth.onAuthStateChanged(user=>{
+      currentUser = user;
+      if(user){
+        $('#loginScreen').classList.remove('on');
+        $('#userEmail').textContent = user.email || 'Utilisateur';
+        // Afficher immédiatement l'application, même si Firestore est vide
+        // ou si une règle Firestore bloque temporairement la synchronisation.
+        render();
+        // Puis synchroniser les données cloud.
+        loadCloudData();
+      }else{
+        $('#loginScreen').classList.add('on');
+        $('#userEmail').textContent = '—';
+        $('#app').innerHTML = '';
+        $('#tabs').innerHTML = '';
+      }
+    });
+    return true;
+  }catch(e){ console.warn('Firebase:', e.message); return false; }
+}
+
+function loadCloudData(){
+  if(!db){ render(); return; }
+  // Paramètres (logo, devise, etc.)
+  db.collection('meta').doc('settings').onSnapshot(snap=>{
+    if(snap.exists){
+      const d = snap.data();
+      S.settings = Object.assign(S.settings, d);
+      saveSettings(); render();
+    }else{
+      try{ db.collection('meta').doc('settings').set(JSON.parse(JSON.stringify(S.settings))).catch(err=>{
+        console.warn('settings sync:', err.message);
+        render();
+      }); }catch(e){
+        console.warn('settings sync:', e.message);
+        render();
+      }
+      render();
+    }
+  }, err=>{
+    console.warn('settings read:', err.message);
+    render();
+  });
+  // Collections
+  COLS.forEach(col=>{
+    db.collection(col).onSnapshot(snap=>{
+      if(snap.empty && S[col].length && !snap.metadata.fromCache){
+        S[col].forEach(o=>{ try{ db.collection(col).doc(o.id).set(JSON.parse(JSON.stringify(o))).catch(()=>{}); }catch(e){} });
+        return;
+      }
+      if(snap.empty && snap.metadata.fromCache) return;
+      S[col] = snap.docs.map(d=>d.data());
+      if(col==='articles') S.articles.forEach(normalizeArticle);
+      saveLocal(col); render();
+      $('#btnSync').classList.add('on');
+    }, err=>{
+      console.warn('sync', col, err.message);
+      // Une erreur Firestore ne doit jamais laisser l'écran vide.
+      render();
+    });
+  });
+  $('#btnSync').classList.add('on');
+}
+
+function pushSettings(){
+  if(db){ try{ db.collection('meta').doc('settings').set(JSON.parse(JSON.stringify(S.settings))).catch(()=>{}); }catch(e){} }
+}
+
+/* ---------- IMAGE ---------- */
+function resizeImage(file, max=420, q=0.65){
+  return new Promise((res,rej)=>{
+    const fr = new FileReader();
+    fr.onload = e=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let w=img.width, h=img.height;
+        const s = Math.min(1, max/Math.max(w,h));
+        w=Math.round(w*s); h=Math.round(h*s);
+        const c=document.createElement('canvas'); c.width=w; c.height=h;
+        const ctx=c.getContext('2d');
+        ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img,0,0,w,h);
+        res(c.toDataURL('image/jpeg', q));
+      };
+      img.onerror = rej; img.src = e.target.result;
+    };
+    fr.onerror = rej; fr.readAsDataURL(file);
+  });
+}
+
+/* ---------- MODALES ---------- */
+function openModal(html){
+  const r = $('#modalRoot');
+  r.innerHTML = `<div class="overlay"><div class="modal">${html}</div></div>`;
+  r.classList.add('on'); document.body.style.overflow='hidden';
+}
+function closeModal(){
+  const r = $('#modalRoot');
+  r.classList.remove('on'); r.innerHTML=''; document.body.style.overflow='';
+}
+$('#modalRoot').addEventListener('click', e=>{ if(e.target.classList.contains('overlay')) closeModal(); });
+
+/* =========================================================
+   ONGLETS
+   ========================================================= */
+const TABS = [
+  {id:'dash',label:'Tableau',icon:'📊'},
+  {id:'vente',label:'Vente',icon:'🛒'},
+  {id:'articles',label:'Articles',icon:'📦'},
+  {id:'stock',label:'Stock',icon:'🏷️'},
+  {id:'prod',label:'Production',icon:'🏭'},
+  {id:'clients',label:'Clients',icon:'👥'},
+  {id:'dep',label:'Dépenses',icon:'💸'},
+  {id:'benef',label:'Bénéfices',icon:'📈'},
+  {id:'hist',label:'Historique',icon:'🧾'}
+];
+
+const VIEWS = {};
+
+/* ---------- TABLEAU DE BORD ---------- */
+VIEWS.dash = function(){
+  const t = todayKey(), m = t.slice(0,7);
+  const vToday = S.ventes.filter(v=>dk(v.date)===t);
+  const caToday = vToday.reduce((s,v)=>s+num(v.total),0);
+  const benToday = vToday.reduce((s,v)=>s+num(v.benefice),0);
+  const vMonth = S.ventes.filter(v=>dk(v.date).slice(0,7)===m);
+  const caMonth = vMonth.reduce((s,v)=>s+num(v.total),0);
+  const benMonth = vMonth.reduce((s,v)=>s+num(v.benefice),0);
+  const depMonth = S.depenses.filter(d=>dk(d.date).slice(0,7)===m).reduce((s,d)=>s+num(d.montant),0);
+  const low = S.articles.filter(a=>num(a.stock)<=num(a.seuil));
+  const stockVal = S.articles.reduce((s,a)=>s+num(a.stock)*num(a.pr),0);
+  const lim = Date.now() - 30*864e5;
+  const agg = {};
+  S.ventes.filter(v=>new Date(v.date).getTime()>=lim).forEach(v=>{
+    (v.lignes||[]).forEach(l=>{
+      agg[l.articleId] = agg[l.articleId] || {nom:l.nom, qte:0, ca:0};
+      agg[l.articleId].qte += num(l.qte);
+      agg[l.articleId].ca  += num(l.qte)*num(l.pu);
+    });
+  });
+  const top = Object.values(agg).sort((a,b)=>b.qte-a.qte).slice(0,5);
+  const heroMedia = S.settings.logo
+    ? `<img class="emblem-img" src="${S.settings.logo}" alt="NY AKAMA">`
+    : `<svg class="emblem" viewBox="0 0 400 400"><use href="#nyakamaLogo"/></svg>`;
+
+  let html = `<div class="hero-logo">${heroMedia}
+    <div class="title">${esc(S.settings.company||'NY AKAMA')}</div>
+    <div class="flourish">❦</div>
+    <div class="sub">Vente &amp; Gestion</div>
+  </div>`;
+  if(low.length){
+    html += `<div class="alert">⚠️ <div><b>${low.length} article(s) en rupture / stock faible</b><br><small>${low.map(a=>esc(a.nom)).join(', ')}</small></div></div>`;
+  }
+  html += `<div class="kpis">
+    <div class="kpi grn"><div class="lbl">CA aujourd'hui</div><div class="val">${money(caToday)}</div><div class="sub">${vToday.length} vente(s)</div></div>
+    <div class="kpi"><div class="lbl">Bénéfice jour</div><div class="val">${money(benToday)}</div><div class="sub">marge brute</div></div>
+    <div class="kpi blue"><div class="lbl">CA du mois</div><div class="val">${money(caMonth)}</div><div class="sub">${vMonth.length} vente(s)</div></div>
+    <div class="kpi acc"><div class="lbl">Bénéfice mois</div><div class="val">${money(benMonth)}</div><div class="sub">avant dépenses</div></div>
+    <div class="kpi red"><div class="lbl">Dépenses mois</div><div class="val">${money(depMonth)}</div><div class="sub">net : ${money(benMonth-depMonth)}</div></div>
+    <div class="kpi"><div class="lbl">Valeur du stock</div><div class="val">${money(stockVal)}</div><div class="sub">${S.articles.length} article(s)</div></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h2>📈 Ventes des 7 derniers jours <span class="r">${money(caToday)} aujourd'hui</span></h2>${chart7()}
+  </div>
+  <div class="card">
+    <h2>🏆 Top articles (30 j)</h2>
+    ${top.length ? top.map((a,i)=>`<div class="row"><div class="thumb ph">${i+1}</div><div class="info"><b>${esc(a.nom)}</b><small>${a.qte} unité(s) vendue(s)</small></div><div class="amt">${money(a.ca)}</div></div>`).join('') : '<div class="empty"><span class="em">📭</span>Aucune vente ce mois</div>'}
+  </div>`;
+  return html;
+};
+
+function chart7(){
+  const days = [];
+  for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); days.push(d); }
+  const vals = days.map(d=>{ const k = dk(d); return S.ventes.filter(v=>dk(v.date)===k).reduce((s,v)=>s+num(v.total),0); });
+  const max = Math.max(...vals, 1);
+  const L = ['D','L','M','M','J','V','S'];
+  return `<div class="chart">${days.map((d,i)=>`
+    <div class="bar-wrap"><div class="bar-val">${vals[i]?fmt(vals[i]):''}</div>
+    <div class="bar" style="height:${Math.max(5,(vals[i]/max)*100)}%"></div>
+    <div class="bar-lbl">${L[d.getDay()]}</div></div>`).join('')}</div>`;
+}
+
+/* ---------- VENTE ---------- */
+VIEWS.vente = function(){
+  const list = S.articles.filter(a=>!searchArt || (a.nom||'').toLowerCase().includes(searchArt.toLowerCase()));
+  const clientOpts = ['<option value="">— Client (par défaut) —</option>']
+    .concat(S.clients.map(c=>`<option value="${c.id}" ${selClient===c.id?'selected':''}>${esc(c.nom)}</option>`)).join('');
+  const totalQty = cart.reduce((s,l)=>s+l.qte,0);
+  const total = cart.reduce((s,l)=>s+l.qte*salePrice(S.articles.find(a=>a.id===l.articleId)||{},l.qte,l.mode||priceMode),0);
+  return `<div class="card sale-card">
+    <h2>⚡ Vente rapide <span class="r">${S.articles.length} produit(s)</span></h2>
+    <div class="sale-tools">
+      <div><label>Client</label><select id="vClient">${clientOpts}</select></div>
+      <div><label>Rechercher</label><input id="vSearch" placeholder="🔎 Nom du produit..." value="${esc(searchArt)}"></div>
+    </div>
+    <label>Mode de prix</label>
+    <div class="price-mode">
+      <button class="btn sm ghost ${priceMode==='auto'?'on':''}" data-act="priceMode" data-id="auto">🤖 Automatique</button>
+      <button class="btn sm ghost ${priceMode==='detail'?'on':''}" data-act="priceMode" data-id="detail">🏷️ Détail</button>
+      <button class="btn sm ghost ${priceMode==='gros'?'on':''}" data-act="priceMode" data-id="gros">📦 Gros</button>
+    </div>
+    <div class="hint" style="margin:8px 0 12px">🤖 Automatique : le prix gros s'applique dès que la quantité atteint le seuil défini sur l'article.</div>
+    <div class="grid-art" id="artGrid">${artGridHTML(list)}</div>
+  </div>
+  ${cart.length ? `<div class="card">
+    <h2>🧺 Panier <span class="r">${totalQty} article(s)</span></h2>
+    ${cart.map((l,i)=>{ const a=S.articles.find(x=>x.id===l.articleId)||{}; const mode=l.mode||priceMode; const pu=salePrice(a,l.qte,mode); return `<div class="cart-item">
+      <div class="nm"><b>${esc(l.nom)}</b><br><span class="price-chip">${priceLabel(a,l.qte,mode)}</span> <small style="color:var(--muted)">${fmt(pu)} ${S.settings.currency} / u.</small></div>
+      <div class="qty"><button data-act="cdec" data-i="${i}">−</button><span>${l.qte}</span><button data-act="cinc" data-i="${i}">+</button></div>
+      <div class="amt">${money(l.qte*pu)}</div>
+      <button class="btn sm danger" data-act="crm" data-i="${i}">✕</button>
+    </div>`;}).join('')}
+    <div class="row" style="border:none;padding-top:14px"><div class="info"><b style="font-size:16px">TOTAL</b></div><div class="amt" style="font-size:19px;color:var(--pri)">${money(total)}</div></div>
+    <button class="btn pri blk" data-act="saveVente">✓ Enregistrer la vente</button>
+  </div>` : ''}`;
+};
+
+function artGridHTML(list){
+  if(!list.length) return `<div class="empty" style="grid-column:1/-1"><span class="em">📦</span>Aucun article.<br>Ajoutez vos produits dans l'onglet <b>Articles</b>.</div>`;
+  return list.map(a=>{ normalizeArticle(a); const out=num(a.stock)<=0; return `<button class="art-btn ${out?'out':''}" data-act="addcart" data-id="${a.id}" ${out?'disabled':''}>
+    ${a.image ? `<img src="${a.image}" alt="">` : `<div class="ph">${esc((a.nom||'?')[0].toUpperCase())}</div>`}
+    <div class="n">${esc(a.nom)}</div>
+    <div class="prices"><span class="price-chip">D ${fmt(a.pvDetail)}</span><span class="price-chip pg">G ${fmt(a.pvGros)}</span></div>
+    <div class="s">${out?'❌ Rupture':num(a.stock)+' en stock'} · gros ≥ ${Math.max(1,num(a.seuilGros))} · ${a.contenance||'—'} cl</div>
+  </button>`;}).join('');
+}
+
+/* ---------- ARTICLES ---------- */
+VIEWS.articles = function(){
+  return `<div class="card">
+    <h2>📦 Mes articles <span class="r">${S.articles.length}</span></h2>
+    <button class="btn pri blk" data-act="newArticle" style="margin-bottom:14px">＋ Nouvel article</button>
+    ${S.articles.length ? S.articles.map(a=>{
+      normalizeArticle(a);
+      const marge = num(a.pvDetail) - num(a.pr);
+      const pct = num(a.pvDetail) > 0 ? (marge/num(a.pvDetail)*100) : 0;
+      const cls = marge<=0 ? 'marge-low' : (pct < 15 ? 'marge' : 'marge');
+      return `<div class="row">
+        ${a.image ? `<img class="thumb" src="${a.image}">` : `<div class="thumb ph">${esc((a.nom||'?')[0].toUpperCase())}</div>`}
+        <div class="info"><b>${esc(a.nom)}</b>
+          <small><span class="badge ${a.qualite}">${a.qualite}</span> ${a.contenance||'—'} cl ·
+            Détail <b>${fmt(a.pvDetail)}</b> · Gros <b>${fmt(a.pvGros)}</b> · seuil gros <b>${Math.max(1,num(a.seuilGros))}</b> · revient ${fmt(a.pr)}
+            ${num(a.stock)<=num(a.seuil) ? ` · <span class="badge low">stock ${num(a.stock)}</span>` : ` · stock ${num(a.stock)}`}
+            <br><span class="badge ${cls}" style="margin-top:4px">Marge : ${fmt(marge)} ${S.settings.currency} (${fmt(pct)} %)</span>
+          </small>
+        </div>
+        <button class="btn sm ghost" data-act="editArticle" data-id="${a.id}">✏️</button>
+        <button class="btn sm danger" data-act="delArticle" data-id="${a.id}">🗑</button>
+      </div>`;
+    }).join('') : '<div class="empty"><span class="em">📦</span>Aucun article.<br>Créez votre premier produit.</div>'}
+  </div>`;
+};
+
+/* ---------- STOCK ---------- */
+VIEWS.stock = function(){
+  const low = S.articles.filter(a=>num(a.stock)<=num(a.seuil));
+  const totalVal = S.articles.reduce((s,a)=>s+num(a.stock)*num(a.pr),0);
+  return `${low.length ? `<div class="alert">⚠️ <div><b>Rupture imminente :</b> ${low.map(a=>esc(a.nom)+' ('+num(a.stock)+')').join(', ')}</div></div>`:''}
+  <div class="kpis" style="margin-bottom:14px">
+    <div class="kpi"><div class="lbl">Articles</div><div class="val">${S.articles.length}</div></div>
+    <div class="kpi blue"><div class="lbl">Unités en stock</div><div class="val">${fmt(S.articles.reduce((s,a)=>s+num(a.stock),0))}</div></div>
+    <div class="kpi acc"><div class="lbl">Valeur (prix revient)</div><div class="val">${money(totalVal)}</div></div>
+    <div class="kpi red"><div class="lbl">Alertes</div><div class="val">${low.length}</div></div>
+  </div>
+  <div class="card">
+    <h2>🏷️ Suivi du stock <span class="r">temps réel</span></h2>
+    ${S.articles.length ? S.articles.map(a=>{
+      const lowS = num(a.stock)<=num(a.seuil);
+      return `<div class="row">
+        ${a.image ? `<img class="thumb" src="${a.image}">` : `<div class="thumb ph">${esc((a.nom||'?')[0].toUpperCase())}</div>`}
+        <div class="info"><b>${esc(a.nom)}</b><small>${a.qualite} · ${a.contenance||'—'} cl · seuil ${num(a.seuil)}</small></div>
+        <div style="text-align:right"><div class="amt" style="color:${lowS?'var(--danger)':'var(--pri)'}">${num(a.stock)}</div>
+        <small style="color:var(--muted);font-size:11px">${lowS?'⚠ faible':'ok'}</small></div>
+        <button class="btn sm ghost" data-act="adjStock" data-id="${a.id}">±</button>
+      </div>`;
+    }).join('') : '<div class="empty"><span class="em">📦</span>Aucun article</div>'}
+  </div>`;
+};
+
+/* ---------- PRODUCTION ---------- */
+VIEWS.prod = function(){
+  const list = [...S.productions].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,20);
+  return `<div class="card">
+    <h2>🏭 Ma production</h2>
+    <p style="color:var(--muted);font-size:13px;margin:0 0 12px">Déclarez ce que vous produisez : le stock est mis à jour automatiquement.</p>
+    <div class="frm">
+      <div><label>Article produit</label>
+        <select id="pArt">${S.articles.map(a=>`<option value="${a.id}">${esc(a.nom)} (${a.contenance||'—'} cl)</option>`).join('')}</select></div>
+      <div class="two">
+        <div><label>Quantité produite</label><input id="pQte" type="number" min="1" value="1"></div>
+        <div><label>Date</label><input id="pDate" type="date" value="${todayKey()}"></div>
+      </div>
+      <div><label>Note (optionnel)</label><input id="pNote" placeholder="Ex : lot matin..."></div>
+      <button class="btn pri blk" data-act="addProd" ${S.articles.length?'':'disabled'}>＋ Ajouter à la production</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>📋 Historique production</h2>
+    ${list.length ? list.map(p=>`<div class="row">
+      <div class="thumb ph">🏭</div>
+      <div class="info"><b>${esc(p.nom)}</b><small>${new Date(p.date).toLocaleDateString('fr-FR')} ${p.note?'· '+esc(p.note):''}</small></div>
+      <div class="amt pos">+${num(p.qte)}</div>
+      <button class="btn sm ghost" data-act="delProd" data-id="${p.id}">🗑</button>
+    </div>`).join('') : '<div class="empty"><span class="em">🏭</span>Aucune production enregistrée</div>'}
+  </div>`;
+};
+
+/* ---------- CLIENTS ---------- */
+VIEWS.clients = function(){
+  return `<div class="card">
+    <h2>👥 Mes clients <span class="r">${S.clients.length}</span></h2>
+    <div class="inline-form" style="margin-bottom:14px">
+      <div><label>Nom du client</label><input id="cNom" placeholder="Ex : Mama Nzuzi"></div>
+      <button class="btn pri" data-act="addClient">＋ Ajouter</button>
+    </div>
+    ${S.clients.length ? S.clients.map(c=>`<div class="row">
+      <div class="thumb ph">${esc((c.nom||'?')[0].toUpperCase())}</div>
+      <div class="info"><b>${esc(c.nom)}</b><small>${S.ventes.filter(v=>v.clientId===c.id).length} vente(s)</small></div>
+      <button class="btn sm danger" data-act="delClient" data-id="${c.id}">🗑</button>
+    </div>`).join('') : '<div class="empty"><span class="em">👥</span>Aucun client.<br>Les ventes sans nom seront attribuées à <b>Client</b>.</div>'}
+  </div>`;
+};
+
+/* ---------- DÉPENSES ---------- */
+VIEWS.dep = function(){
+  const m = todayKey().slice(0,7);
+  const tot = S.depenses.reduce((s,d)=>s+num(d.montant),0);
+  const totM = S.depenses.filter(d=>dk(d.date).slice(0,7)===m).reduce((s,d)=>s+num(d.montant),0);
+  const list = [...S.depenses].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  return `<div class="kpis" style="margin-bottom:14px">
+    <div class="kpi red"><div class="lbl">Ce mois</div><div class="val">${money(totM)}</div></div>
+    <div class="kpi"><div class="lbl">Total général</div><div class="val">${money(tot)}</div></div>
+  </div>
+  <div class="card">
+    <h2>💸 Nouvelle dépense</h2>
+    <div class="frm">
+      <div><label>Libellé</label><input id="dLib" placeholder="Ex : Électricité, transport..."></div>
+      <div class="two">
+        <div><label>Montant</label><input id="dMon" type="number" min="0" placeholder="0"></div>
+        <div><label>Date</label><input id="dDate" type="date" value="${todayKey()}"></div>
+      </div>
+      <button class="btn pri blk" data-act="addDep">＋ Enregistrer la dépense</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>🧾 Liste des dépenses</h2>
+    ${list.length ? list.map(d=>`<div class="row">
+      <div class="thumb ph">💸</div>
+      <div class="info"><b>${esc(d.libelle)}</b><small>${new Date(d.date).toLocaleDateString('fr-FR')}</small></div>
+      <div class="amt neg">-${money(d.montant)}</div>
+      <button class="btn sm ghost" data-act="delDep" data-id="${d.id}">🗑</button>
+    </div>`).join('') : '<div class="empty"><span class="em">💸</span>Aucune dépense enregistrée</div>'}
+  </div>`;
+};
+
+/* ---------- BÉNÉFICES ---------- */
+let benefPeriod = 'mois';
+VIEWS.benef = function(){
+  const now = new Date(); let min = 0;
+  if(benefPeriod==='jour')  min = new Date(dk(now)+'T00:00:00').getTime();
+  if(benefPeriod==='sem')   min = now.getTime() - 7*864e5;
+  if(benefPeriod==='mois')  min = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const V = S.ventes.filter(v=>new Date(v.date).getTime()>=min);
+  const D = S.depenses.filter(d=>new Date(d.date).getTime()>=min);
+  const ca = V.reduce((s,v)=>s+num(v.total),0);
+  const cout = V.reduce((s,v)=>s+num(v.cout),0);
+  const brut = ca - cout;
+  const dep = D.reduce((s,d)=>s+num(d.montant),0);
+  const net = brut - dep;
+  const marge = ca ? (brut/ca*100) : 0;
+  const agg = {};
+  V.forEach(v=>(v.lignes||[]).forEach(l=>{
+    agg[l.articleId] = agg[l.articleId] || {nom:l.nom, qte:0, ca:0, ben:0};
+    agg[l.articleId].qte += num(l.qte);
+    agg[l.articleId].ca  += num(l.qte)*num(l.pu);
+    agg[l.articleId].ben += num(l.qte)*(num(l.pu)-num(l.pr));
+  }));
+  const detail = Object.values(agg).sort((a,b)=>b.ben-a.ben);
+  const P = (id,lab)=>`<button class="tab ${benefPeriod===id?'on':''}" data-act="period" data-id="${id}">${lab}</button>`;
+  return `<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:14px">
+    ${P('jour','Aujourd\'hui')}${P('sem','7 jours')}${P('mois','Ce mois')}${P('tout','Tout')}
+  </div>
+  <div class="kpis">
+    <div class="kpi grn"><div class="lbl">Chiffre d'affaires</div><div class="val">${money(ca)}</div><div class="sub">${V.length} vente(s)</div></div>
+    <div class="kpi blue"><div class="lbl">Coût marchandises</div><div class="val">${money(cout)}</div><div class="sub">prix de revient</div></div>
+    <div class="kpi acc"><div class="lbl">Bénéfice brut</div><div class="val">${money(brut)}</div><div class="sub">marge ${fmt(marge)} %</div></div>
+    <div class="kpi red"><div class="lbl">Dépenses</div><div class="val">${money(dep)}</div><div class="sub">${D.length} entrée(s)</div></div>
+    <div class="kpi ${net>=0?'grn':'red'}"><div class="lbl">Bénéfice net</div><div class="val">${money(net)}</div><div class="sub">brut − dépenses</div></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h2>📊 Rentabilité par article</h2>
+    ${detail.length ? detail.map(d=>`<div class="row">
+      <div class="thumb ph">${esc((d.nom||'?')[0].toUpperCase())}</div>
+      <div class="info"><b>${esc(d.nom)}</b><small>${d.qte} vendu(s) · CA ${money(d.ca)}</small></div>
+      <div class="amt pos">+${money(d.ben)}</div>
+    </div>`).join('') : '<div class="empty"><span class="em">📊</span>Aucune vente sur la période</div>'}
+  </div>
+  <div class="card">
+    <h2>🧮 Résumé</h2>
+    <div class="row"><div class="info"><b>Chiffre d'affaires</b></div><div class="amt">${money(ca)}</div></div>
+    <div class="row"><div class="info"><b>− Coût des marchandises vendues</b></div><div class="amt neg">${money(cout)}</div></div>
+    <div class="row"><div class="info"><b>= Bénéfice brut</b></div><div class="amt">${money(brut)}</div></div>
+    <div class="row"><div class="info"><b>− Dépenses</b></div><div class="amt neg">${money(dep)}</div></div>
+    <div class="row" style="border-top:2px solid var(--line)">
+      <div class="info"><b style="font-size:16px">= BÉNÉFICE NET</b></div>
+      <div class="amt ${net>=0?'pos':'neg'}" style="font-size:18px">${money(net)}</div>
+    </div>
+  </div>`;
+};
+
+/* ---------- HISTORIQUE ---------- */
+VIEWS.hist = function(){
+  const list = [...S.ventes].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,100);
+  const tot = list.reduce((s,v)=>s+num(v.total),0);
+  return `<div class="kpis" style="margin-bottom:14px">
+    <div class="kpi"><div class="lbl">Ventes affichées</div><div class="val">${list.length}</div></div>
+    <div class="kpi grn"><div class="lbl">Total</div><div class="val">${money(tot)}</div></div>
+    <div class="kpi acc"><div class="lbl">Bénéfice</div><div class="val">${money(list.reduce((s,v)=>s+num(v.benefice),0))}</div></div>
+  </div>
+  <div class="card">
+    <h2>🧾 Historique des ventes</h2>
+    ${list.length ? list.map(v=>`<div class="row">
+      <div class="thumb ph">🧾</div>
+      <div class="info"><b>${esc(v.clientNom||'Client')}</b>
+        <small>${new Date(v.date).toLocaleString('fr-FR')} · ${(v.lignes||[]).length} ligne(s) ·
+        <span style="color:#16a34a">+${money(v.benefice)}</span></small></div>
+      <div class="amt">${money(v.total)}</div>
+      <button class="btn sm ghost" data-act="ticket" data-id="${v.id}">🖨</button>
+      <button class="btn sm danger" data-act="delVente" data-id="${v.id}">🗑</button>
+    </div>`).join('') : '<div class="empty"><span class="em">🧾</span>Aucune vente enregistrée</div>'}
+  </div>`;
+};
+
+/* =========================================================
+   RENDU
+   ========================================================= */
+function render(){
+  if(!currentUser) return; // Ne rien dessiner si non connecté
+  $('#tabs').innerHTML = TABS.map(t=>`<button class="tab ${S.view===t.id?'on':''}" data-act="tab" data-id="${t.id}"><span>${t.icon}</span>${t.label}</button>`).join('');
+  $('#app').innerHTML = VIEWS[S.view] ? VIEWS[S.view]() : '';
+  $('#hLogo').innerHTML = logoHTML('100%');
+  const bar = $('#cartBar');
+  const n = cart.reduce((s,l)=>s+l.qte,0);
+  if(S.view==='vente' && n>0){
+    bar.classList.add('on');
+    $('#cartCount').textContent = n + ' article' + (n>1?'s':'');
+    $('#cartTotal').textContent = money(cart.reduce((s,l)=>s+l.qte*l.pu,0));
+  }else bar.classList.remove('on');
+  $('#hCompany').textContent = S.settings.company || 'NY AKAMA';
+  $('#hDate').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+
+/* =========================================================
+   AUTHENTIFICATION
+   ========================================================= */
+
+/* Afficher/masquer le spinner sur le bouton login */
+function loginBusy(busy){
+  const b = $('#btnLogin');
+  b.disabled = busy;
+  b.textContent = busy ? '⏳ Connexion...' : '🔐 Se connecter';
+}
+
+function showLoginError(msg){
+  const e = $('#loginError');
+  e.textContent = msg;
+  e.classList.add('on');
+}
+function hideLoginError(){ $('#loginError').classList.remove('on'); }
+
+/* Traduire les codes d'erreur Firebase */
+function frAuthError(code){
+  const map = {
+    'auth/invalid-email':"L'adresse email n'est pas valide.",
+    'auth/user-disabled':"Ce compte a été désactivé.",
+    'auth/user-not-found':"Aucun compte ne correspond à cet email.",
+    'auth/wrong-password':"Mot de passe incorrect.",
+    'auth/invalid-credential':"Email ou mot de passe incorrect.",
+    'auth/too-many-requests':"Trop de tentatives. Réessayez plus tard.",
+    'auth/network-request-failed':"Problème de connexion internet.",
+    'auth/email-already-in-use':"Cet email est déjà utilisé.",
+    'auth/weak-password':"Le mot de passe doit contenir au moins 6 caractères.",
+    'auth/operation-not-allowed':"Activez 'Email/Mot de passe' dans Firebase Console → Authentication.",
+    'auth/configuration-not-found':"Firebase Auth n'est pas activé sur ce projet."
+  };
+  return map[code] || "Erreur : " + code;
+}
+
+
+/* --- Configuration Firebase depuis l'écran de connexion --- */
+function openFirebaseSetup(){
+  const st = S.settings;
+  openModal(`<h3>⚙️ Configuration Firebase</h3>
+    <p style="color:var(--muted);font-size:13px">Entrez ici la configuration Web de votre projet Firebase. Ces informations sont normalement disponibles dans Firebase Console → Paramètres du projet → Vos applications → Application Web.</p>
+    <div class="frm">
+      <div><label>apiKey</label><input id="preFbApi" value="${esc(st.fb.apiKey||'')}" autocomplete="off"></div>
+      <div><label>authDomain</label><input id="preFbAuth" value="${esc(st.fb.authDomain||'')}" autocomplete="off"></div>
+      <div><label>projectId</label><input id="preFbProj" value="${esc(st.fb.projectId||'')}" autocomplete="off"></div>
+      <div><label>storageBucket</label><input id="preFbStore" value="${esc(st.fb.storageBucket||'')}" autocomplete="off"></div>
+      <div><label>messagingSenderId</label><input id="preFbMsg" value="${esc(st.fb.messagingSenderId||'')}" autocomplete="off"></div>
+      <div><label>appId</label><input id="preFbApp" value="${esc(st.fb.appId||'')}" autocomplete="off"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" data-act="closeModal">Annuler</button>
+      <button class="btn pri" id="preFbSave">💾 Enregistrer et tester</button>
+    </div>`);
+  $('#preFbSave').onclick = ()=>{
+    const cfg = {
+      apiKey: $('#preFbApi').value.trim(),
+      authDomain: $('#preFbAuth').value.trim(),
+      projectId: $('#preFbProj').value.trim(),
+      storageBucket: $('#preFbStore').value.trim(),
+      messagingSenderId: $('#preFbMsg').value.trim(),
+      appId: $('#preFbApp').value.trim()
+    };
+    if(!cfg.apiKey || !cfg.authDomain || !cfg.projectId || !cfg.appId){
+      return toast('apiKey, authDomain, projectId et appId sont obligatoires');
+    }
+    // Enregistrer localement d'abord.
+    S.settings.fb = cfg;
+    saveSettings();
+
+    // Tester immédiatement la configuration avant de recharger l'application.
+    try{
+      if(typeof firebase === 'undefined') throw new Error("Le SDK Firebase n'est pas chargé. Vérifiez votre connexion Internet.");
+      if(!firebase.apps.length) firebase.initializeApp(cfg);
+      const testAuth = firebase.auth();
+      testAuth.onAuthStateChanged(()=>{}, ()=>{});
+      closeModal();
+      toast('✅ Firebase configuré. Redémarrage…');
+      setTimeout(()=>location.reload(), 900);
+    }catch(err){
+      console.error('Firebase config:', err);
+      toast('❌ Configuration Firebase invalide ou SDK inaccessible');
+    }
+  };
+}
+
+// Sécurise le clic/toucher sur Android même si un autre gestionnaire intercepte l'événement.
+document.addEventListener('click', function(ev){
+  const b = ev.target.closest && ev.target.closest('#btnFirebaseSetup');
+  if(b){ ev.preventDefault(); ev.stopPropagation(); openFirebaseSetup(); }
+}, true);
+$('#btnFirebaseSetup').onclick = function(ev){ if(ev){ev.preventDefault(); ev.stopPropagation();} openFirebaseSetup(); };
+
+$('#btnOffline').onclick = ()=>{
+  offlineMode = true;
+  currentUser = { email:'Mode hors ligne' };
+  $('#loginScreen').classList.remove('on');
+  $('#userEmail').textContent = 'Mode hors ligne';
+  render();
+  toast('📱 Mode hors ligne activé — données enregistrées sur ce téléphone');
+};
+
+/* --- Connexion --- */
+$('#btnLogin').onclick = async ()=>{
+  if(!auth){
+    showLoginError("Firebase n'est pas configuré. Appuyez sur « Configurer Firebase » ou utilisez « Mode hors ligne ».");
+    return;
+  }
+  const email = ($('#loginEmail').value||'').trim();
+  const pwd   = ($('#loginPassword').value||'');
+  if(!email || !pwd){ showLoginError("Veuillez remplir tous les champs."); return; }
+  hideLoginError(); loginBusy(true);
+  try{
+    await auth.signInWithEmailAndPassword(email, pwd);
+    // onAuthStateChanged va fermer l'écran de connexion
+  }catch(err){
+    showLoginError(frAuthError(err.code));
+    loginBusy(false);
+  }
+};
+
+/* Validation clavier */
+$('#loginPassword').addEventListener('keydown', e=>{
+  if(e.key==='Enter') $('#btnLogin').click();
+});
+$('#loginEmail').addEventListener('keydown', e=>{
+  if(e.key==='Enter') $('#loginPassword').focus();
+});
+
+/* --- Création du premier compte (signup) --- */
+$('#btnSignup').onclick = ()=>{
+  openModal(`
+    <h3>🆕 Créer un compte administrateur</h3>
+    <p style="color:var(--muted);font-size:13px;margin:0 0 14px">
+      Ce premier compte sera votre compte principal. Les comptes suivants
+      pourront être ajoutés depuis ⚙️ Paramètres → Utilisateurs.
+    </p>
+    <div class="frm">
+      <div><label>Email</label><input type="email" id="suEmail" placeholder="vous@exemple.com"></div>
+      <div><label>Mot de passe (6 caractères min.)</label><input type="password" id="suPwd" placeholder="••••••••"></div>
+      <div><label>Confirmer le mot de passe</label><input type="password" id="suPwd2" placeholder="••••••••"></div>
+      <div class="login-error" id="suErr"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" data-act="closeModal">Annuler</button>
+      <button class="btn pri" id="suOk">Créer le compte</button>
+    </div>
+  `);
+  $('#suOk').onclick = async ()=>{
+    const e = ($('#suEmail').value||'').trim();
+    const p = $('#suPwd').value||'';
+    const p2 = $('#suPwd2').value||'';
+    const err = $('#suErr');
+    err.classList.remove('on');
+    if(!e||!p){ err.textContent="Remplissez tous les champs."; err.classList.add('on'); return; }
+    if(p.length<6){ err.textContent="6 caractères minimum."; err.classList.add('on'); return; }
+    if(p!==p2){ err.textContent="Les mots de passe ne correspondent pas."; err.classList.add('on'); return; }
+    if(!auth){ err.textContent="Firebase Auth non configuré."; err.classList.add('on'); return; }
+    try{
+      await auth.createUserWithEmailAndPassword(e, p);
+      closeModal();
+      toast('Compte créé ! Connexion en cours...');
+    }catch(ex){
+      err.textContent = frAuthError(ex.code);
+      err.classList.add('on');
+    }
+  };
+};
+
+/* --- Déconnexion --- */
+$('#btnLogout').onclick = ()=>{
+  if(offlineMode){
+    if(confirm('Quitter le mode hors ligne ?')){
+      offlineMode=false; currentUser=null; $('#loginScreen').classList.add('on'); toast('Mode hors ligne quitté');
+    }
+    return;
+  }
+  if(!auth) return;
+  if(confirm('Voulez-vous vraiment vous déconnecter ?')){
+    auth.signOut();
+    toast('Déconnecté');
+  }
+};
+
+/* =========================================================
+   ÉVÉNEMENTS APP
+   ========================================================= */
+document.addEventListener('click', async e=>{
+  const el = e.target.closest('[data-act]');
+  if(!el) return;
+  const act = el.dataset.act;
+  const id  = el.dataset.id;
+  const i   = el.dataset.i !== undefined ? Number(el.dataset.i) : -1;
+  switch(act){
+    case 'tab': S.view = id; searchArt=''; render(); window.scrollTo({top:0,behavior:'smooth'}); break;
+    case 'period': benefPeriod = id; render(); break;
+    case 'priceMode': priceMode = id || 'auto'; cart.forEach(l=>{ if(priceMode!=='auto') l.mode=priceMode; else l.mode='auto'; }); render(); break;
+    case 'addcart': {
+      const a = S.articles.find(x=>x.id===id);
+      if(!a) return;
+      if(num(a.stock)<=0) return toast('Stock épuisé pour '+a.nom);
+      qteModal(a); break;
+    }
+    case 'cinc': if(cart[i]){ const a=S.articles.find(x=>x.id===cart[i].articleId); if(a && cart[i].qte < num(a.stock)){ cart[i].qte++; render(); } else toast('Stock maximum atteint'); } break;
+    case 'cdec': if(cart[i]){ cart[i].qte--; if(cart[i].qte<=0) cart.splice(i,1); render(); } break;
+    case 'crm':  cart.splice(i,1); render(); break;
+    case 'saveVente': saveVente(); break;
+    case 'newArticle': articleModal(null); break;
+    case 'editArticle': articleModal(id); break;
+    case 'delArticle': {
+      const a = S.articles.find(x=>x.id===id);
+      if(!a) return;
+      if(confirm('Supprimer définitivement « '+a.nom+' » ?')){ del('articles', id); render(); toast('Article supprimé'); }
+      break;
+    }
+    case 'adjStock': adjStockModal(id); break;
+    case 'addProd': addProduction(); break;
+    case 'delProd': {
+      const p = S.productions.find(x=>x.id===id);
+      if(!p) return;
+      if(confirm('Supprimer cette production ? Le stock sera diminué.')){
+        const a = S.articles.find(x=>x.id===p.articleId);
+        if(a){ a.stock = num(a.stock) - num(p.qte); put('articles', a); }
+        del('productions', id); render(); toast('Production supprimée');
+      }
+      break;
+    }
+    case 'addClient': {
+      const inp = $('#cNom'); const nom = (inp.value||'').trim();
+      if(!nom) return toast('Entrez un nom');
+      put('clients', {id:uid(), nom, date:new Date().toISOString()});
+      render(); toast('Client ajouté'); break;
+    }
+    case 'delClient':
+      if(confirm('Supprimer ce client ?')){ del('clients', id); if(selClient===id) selClient=''; render(); toast('Client supprimé'); }
+      break;
+    case 'addDep': {
+      const lib = ($('#dLib').value||'').trim();
+      const mon = num($('#dMon').value);
+      const dt  = $('#dDate').value || todayKey();
+      if(!lib) return toast('Entrez un libellé');
+      if(mon<=0) return toast('Montant invalide');
+      put('depenses', {id:uid(), libelle:lib, montant:mon, date:new Date(dt+'T12:00:00').toISOString()});
+      render(); toast('Dépense enregistrée'); break;
+    }
+    case 'delDep': if(confirm('Supprimer cette dépense ?')){ del('depenses', id); render(); } break;
+    case 'ticket': { const v = S.ventes.find(x=>x.id===id); if(v) showTicket(v); break; }
+    case 'delVente': {
+      const v = S.ventes.find(x=>x.id===id);
+      if(!v) return;
+      if(confirm('Supprimer cette vente ? Le stock sera restauré.')){
+        (v.lignes||[]).forEach(l=>{
+          const a = S.articles.find(x=>x.id===l.articleId);
+          if(a){ a.stock = num(a.stock) + num(l.qte); put('articles', a); }
+        });
+        del('ventes', id); render(); toast('Vente supprimée');
+      }
+      break;
+    }
+    case 'closeModal': closeModal(); break;
+  }
+});
+
+document.addEventListener('input', e=>{
+  if(e.target.id==='vSearch'){
+    searchArt = e.target.value;
+    const g = $('#artGrid');
+    if(g){
+      const list = S.articles.filter(a=>!searchArt || (a.nom||'').toLowerCase().includes(searchArt.toLowerCase()));
+      g.innerHTML = artGridHTML(list);
+    }
+  }
+});
+document.addEventListener('change', e=>{ if(e.target.id==='vClient'){ selClient = e.target.value; } });
+
+/* =========================================================
+   ACTIONS MÉTIER
+   ========================================================= */
+function qteModal(a){
+  normalizeArticle(a);
+  openModal(`<h3>🛒 ${esc(a.nom)}</h3>
+    <div style="display:flex;gap:14px;align-items:center;margin-bottom:16px">
+      ${a.image?`<img src="${a.image}" style="width:76px;height:76px;border-radius:14px;object-fit:cover">`:`<div style="width:76px;height:76px;border-radius:14px;background:var(--pri-l);display:grid;place-items:center;font-size:28px;font-weight:800;color:var(--pri)">${esc((a.nom||'?')[0].toUpperCase())}</div>`}
+      <div><div style="font-size:15px;font-weight:800;color:var(--pri)">Détail : ${fmt(a.pvDetail)} ${S.settings.currency}</div><div style="font-size:15px;font-weight:800;color:#b45309">Gros : ${fmt(a.pvGros)} ${S.settings.currency}</div><div style="font-size:12.5px;color:var(--muted);margin-top:3px">Gros à partir de ${Math.max(1,num(a.seuilGros))} unité(s) · Stock : ${num(a.stock)}</div></div>
+    </div>
+    <label>Mode de prix pour cette ligne</label>
+    <div class="price-mode"><button class="btn sm ghost ${priceMode==='auto'?'on':''}" id="qmAuto">🤖 Auto</button><button class="btn sm ghost ${priceMode==='detail'?'on':''}" id="qmDetail">🏷️ Détail</button><button class="btn sm ghost ${priceMode==='gros'?'on':''}" id="qmGros">📦 Gros</button></div>
+    <label style="margin-top:14px">Quantité</label>
+    <div class="qty" style="width:100%;justify-content:space-between;height:48px"><button id="qm" style="width:56px;height:46px;font-size:22px">−</button><span id="qv" style="font-size:20px;flex:1">1</span><button id="qp" style="width:56px;height:46px;font-size:22px">＋</button></div>
+    <div style="text-align:center;margin-top:12px;font-size:14px;color:var(--muted)"><span id="qmode" class="price-chip">DÉTAIL</span> Total : <b id="qt" style="color:var(--pri);font-size:17px">${fmt(a.pvDetail)} ${S.settings.currency}</b></div>
+    <div class="modal-foot"><button class="btn ghost" data-act="closeModal">Annuler</button><button class="btn pri" id="qok">Ajouter au panier</button></div>`);
+  let q=1, mode=priceMode;
+  const upd=()=>{ const pu=salePrice(a,q,mode); $('#qv').textContent=q; $('#qt').textContent=money(q*pu); $('#qmode').textContent=priceLabel(a,q,mode); ['qmAuto','qmDetail','qmGros'].forEach(id=>$('#'+id)?.classList.remove('on')); const map={auto:'qmAuto',detail:'qmDetail',gros:'qmGros'}; $('#'+map[mode])?.classList.add('on'); };
+  $('#qmAuto').onclick=()=>{mode='auto';upd()}; $('#qmDetail').onclick=()=>{mode='detail';upd()}; $('#qmGros').onclick=()=>{mode='gros';upd()};
+  $('#qm').onclick=()=>{q=Math.max(1,q-1);upd()}; $('#qp').onclick=()=>{q=Math.min(num(a.stock),q+1);upd()};
+  $('#qok').onclick=()=>{ if(q>num(a.stock)) return toast('Stock insuffisant'); const ex=cart.find(l=>l.articleId===a.id); if(ex){ex.qte+=q; ex.mode=mode;} else cart.push({articleId:a.id,nom:a.nom,qte:q,mode,pr:num(a.pr),qualite:a.qualite,contenance:a.contenance}); closeModal(); render(); toast(a.nom+' × '+q+' ajouté'); };
+  upd();
+}
+
+function saveVente(){
+  if(!cart.length) return toast('Panier vide');
+  for(const l of cart){ const a=S.articles.find(x=>x.id===l.articleId); if(!a) return toast('Article introuvable'); if(num(a.stock)<l.qte) return toast('Stock insuffisant : '+a.nom+' ('+num(a.stock)+' restant)'); }
+  const cl=S.clients.find(c=>c.id===selClient);
+  const lignes=cart.map(l=>{ const a=S.articles.find(x=>x.id===l.articleId); const mode=l.mode||priceMode; const pu=salePrice(a,l.qte,mode); return {articleId:l.articleId,nom:l.nom,qte:l.qte,pu,pr:num(a.pr),qualite:l.qualite,contenance:l.contenance,modePrix:priceLabel(a,l.qte,mode),seuilGros:num(a.seuilGros)}; });
+  const v={id:uid(),date:new Date().toISOString(),clientId:selClient||'',clientNom:cl?cl.nom:'Client',vendeur:currentUser?currentUser.email:'',lignes,total:lignes.reduce((s,l)=>s+l.qte*l.pu,0),cout:lignes.reduce((s,l)=>s+l.qte*l.pr,0)};
+  v.benefice=v.total-v.cout;
+  lignes.forEach(l=>{ const a=S.articles.find(x=>x.id===l.articleId); a.stock=num(a.stock)-l.qte; put('articles',a); });
+  put('ventes',v); cart=[]; priceMode='auto'; render(); showTicket(v);
+}
+
+function receiptHTML(v){
+  const st = S.settings;
+  const logoBlock = st.logo
+    ? `<div class="logo-t"><img src="${st.logo}" alt="NY AKAMA"></div>`
+    : `<div class="logo-t"><svg viewBox="0 0 400 400"><use href="#nyakamaLogo"/></svg></div>`;
+  return `<div class="rcpt">
+    ${logoBlock}
+    <div class="brand">${esc(st.company||'NY AKAMA')}</div>
+    <div class="c">Vente &amp; Gestion</div>
+    ${st.phone?`<div class="c">Tél : ${esc(st.phone)}</div>`:''}
+    <div class="c">Reçu de vente</div><div class="c" style="font-size:10px">Ticket thermique • Bluetooth / USB via impression système</div>
+    <div class="sep"></div>
+    <div>Date  : ${new Date(v.date).toLocaleString('fr-FR')}</div>
+    <div>Client: ${esc(v.clientNom||'Client')}</div>
+    <div>N°    : ${String(v.id).slice(-6).toUpperCase()}</div>
+    <div class="sep"></div>
+    ${(v.lignes||[]).map(l=>`<div class="b">${esc(l.nom)}</div>
+      <div class="r"><span>${l.qte} x ${fmt(l.pu)} ${l.modePrix?`[${esc(l.modePrix)}]`:''}</span><span>${fmt(l.qte*l.pu)}</span></div>`).join('')}
+    <div class="sep"></div>
+    <div class="r b big"><span>TOTAL</span><span>${fmt(v.total)} ${esc(st.currency)}</span></div>
+    <div class="sep"></div>
+    <div class="c">Merci de votre visite !</div>
+    <div class="c">${esc(st.company||'NY AKAMA')}</div>
+  </div>`;
+}
+function showTicket(v){
+  openModal(`<h3>🧾 Ticket de vente</h3>
+    <div style="border:1px dashed var(--line);border-radius:12px;padding:10px;background:#fbfbfb">${receiptHTML(v)}</div>
+    <div class="modal-foot">
+      <button class="btn ghost" data-act="closeModal">Fermer</button>
+      <button class="btn ghost" id="btnPrint58">🧾 58 mm</button><button class="btn pri" id="btnPrint">🖨 Imprimer</button>
+    </div>`);
+  $('#btnPrint').onclick = ()=>{ $('#ticket').innerHTML=receiptHTML(v); setTimeout(()=>window.print(),80); };
+  $('#btnPrint58').onclick = ()=>{ document.body.classList.add('print58'); $('#ticket').innerHTML=receiptHTML(v); setTimeout(()=>{window.print();setTimeout(()=>document.body.classList.remove('print58'),500)},80); };
+}
+
+function articleModal(id){
+  const a = id ? S.articles.find(x=>x.id===id)
+               : {id:null, nom:'', qualite:'verre', contenance:'', pv:'', pvDetail:'', pvGros:'', seuilGros:S.settings.seuil||10, pr:'', stock:0, seuil:S.settings.seuil||10, image:''};
+  let image = a.image || '';
+  openModal(`<h3>${id?'✏️ Modifier l\'article':'＋ Nouvel article'}</h3>
+    <div class="frm">
+      <div><label>Nom du produit</label><input id="fNom" value="${esc(a.nom)}" placeholder="Ex : Eau minérale 50cl"></div>
+      <div class="two">
+        <div><label>Qualité</label>
+          <select id="fQual">
+            <option value="verre" ${a.qualite==='verre'?'selected':''}>Verre</option>
+            <option value="plastique" ${a.qualite==='plastique'?'selected':''}>Plastique</option>
+          </select></div>
+        <div><label>Contenance (cl)</label><input id="fCont" type="number" value="${esc(a.contenance)}" placeholder="50"></div>
+      </div>
+      <div class="two">
+        <div><label>Prix détail</label><input id="fPvD" type="number" step="0.01" value="${esc(a.pvDetail!==undefined?a.pvDetail:a.pv)}" placeholder="0"></div>
+        <div><label>Prix gros</label><input id="fPvG" type="number" step="0.01" value="${esc(a.pvGros!==undefined?a.pvGros:a.pvDetail||a.pv)}" placeholder="0"></div>
+      </div>
+      <div class="two"><div><label>Seuil automatique gros (quantité)</label><input id="fSeuilGros" type="number" min="1" value="${Math.max(1,num(a.seuilGros||S.settings.seuil||10))}"></div><div><label>Prix de revient</label><input id="fPr" type="number" step="0.01" value="${esc(a.pr)}" placeholder="0"></div>
+      </div>
+      <div class="marge-box" id="fMarge"><div><span class="m-lbl">Marge bénéficiaire</span><span class="m-val">0</span></div><div class="m-pct">0 %</div></div>
+      <div class="two">
+        <div><label>Stock actuel</label><input id="fStk" type="number" value="${esc(a.stock)}"></div>
+        <div><label>Seuil d'alerte</label><input id="fSeuil" type="number" value="${esc(a.seuil)}"></div>
+      </div>
+      <div><label>Image de l'article</label>
+        <div class="imgpick">
+          <img id="fPrev" src="${image}" style="${image?'':'display:none'}">
+          <div class="btns">
+            <button class="btn sm ghost" id="fPick">📷 Choisir</button>
+            <button class="btn sm danger" id="fDel" style="${image?'':'display:none'}">🗑 Supprimer l'image</button>
+          </div>
+        </div>
+        <input type="file" id="fFile" accept="image/*" hidden>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" data-act="closeModal">Annuler</button>
+      <button class="btn pri" id="fSave">Enregistrer</button>
+    </div>`);
+  function updateMarge(){
+    const pv = num($('#fPvD').value), pr = num($('#fPr').value);
+    const marge = pv - pr, pct = pv > 0 ? (marge/pv*100) : 0;
+    const box = $('#fMarge');
+    box.classList.remove('neg','low');
+    if(marge < 0) box.classList.add('neg');
+    else if(pct < 15) box.classList.add('low');
+    box.querySelector('.m-val').textContent = money(marge);
+    box.querySelector('.m-pct').textContent = fmt(pct) + ' %';
+  }
+  $('#fPvD').addEventListener('input', updateMarge);
+  $('#fPr').addEventListener('input', updateMarge);
+  updateMarge();
+  $('#fPick').onclick = ()=>$('#fFile').click();
+  $('#fFile').onchange = async ev=>{
+    const f = ev.target.files[0]; if(!f) return;
+    try{ image = await resizeImage(f); $('#fPrev').src = image; $('#fPrev').style.display='block'; $('#fDel').style.display='inline-flex'; }
+    catch(err){ toast('Image illisible'); }
+  };
+  $('#fDel').onclick = ()=>{ image=''; $('#fPrev').style.display='none'; $('#fDel').style.display='none'; $('#fFile').value=''; };
+  $('#fSave').onclick = ()=>{
+    const nom = ($('#fNom').value||'').trim();
+    if(!nom) return toast('Le nom est obligatoire');
+    const obj = {
+      id: a.id || uid(), nom,
+      qualite: $('#fQual').value,
+      contenance: num($('#fCont').value),
+      pv: num($('#fPvD').value), pvDetail: num($('#fPvD').value), pvGros: num($('#fPvG').value), seuilGros: Math.max(1,num($('#fSeuilGros').value)||10), pr: num($('#fPr').value),
+      stock: num($('#fStk').value), seuil: num($('#fSeuil').value),
+      image, maj: new Date().toISOString()
+    };
+    put('articles', obj); closeModal(); render();
+    toast(a.id ? 'Article modifié' : 'Article ajouté');
+  };
+}
+
+function adjStockModal(id){
+  const a = S.articles.find(x=>x.id===id);
+  if(!a) return;
+  openModal(`<h3>± Ajuster le stock — ${esc(a.nom)}</h3>
+    <p style="color:var(--muted);font-size:13px;margin:0 0 14px">Stock actuel : <b>${num(a.stock)}</b> unité(s)</p>
+    <label>Nouveau stock</label>
+    <input id="sVal" type="number" value="${num(a.stock)}">
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn sm ghost" id="sPlus">+10</button>
+      <button class="btn sm ghost" id="sPlus1">+1</button>
+      <button class="btn sm ghost" id="sMinus1">−1</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" data-act="closeModal">Annuler</button>
+      <button class="btn pri" id="sOk">Enregistrer</button>
+    </div>`);
+  const inp = $('#sVal');
+  $('#sPlus').onclick = ()=>inp.value = num(inp.value)+10;
+  $('#sPlus1').onclick = ()=>inp.value = num(inp.value)+1;
+  $('#sMinus1').onclick = ()=>inp.value = Math.max(0,num(inp.value)-1);
+  $('#sOk').onclick = ()=>{ a.stock = num(inp.value); put('articles', a); closeModal(); render(); toast('Stock mis à jour'); };
+}
+
+function addProduction(){
+  const aid = $('#pArt').value;
+  const a = S.articles.find(x=>x.id===aid);
+  if(!a) return toast('Sélectionnez un article');
+  const q = num($('#pQte').value);
+  if(q<=0) return toast('Quantité invalide');
+  const p = {id:uid(), articleId:a.id, nom:a.nom, qte:q,
+    note:($('#pNote').value||'').trim(),
+    date:new Date(($('#pDate').value||todayKey())+'T12:00:00').toISOString()};
+  put('productions', p);
+  a.stock = num(a.stock) + q;
+  put('articles', a);
+  render();
+  toast('Production enregistrée · stock +'+q);
+}
+
+/* =========================================================
+   PARAMÈTRES (avec gestion utilisateurs)
+   ========================================================= */
+$('#btnSettings').onclick = ()=>{
+  const st = S.settings;
+  const isFirebase = !!auth;
+  openModal(`<h3>⚙️ Paramètres</h3>
+
+    <h3 style="margin-top:6px;font-size:14px">🎨 Logo de la société</h3>
+    <p style="color:var(--muted);font-size:12.5px;margin:0 0 10px">Téléversez votre logo officiel NY AKAMA.</p>
+    <div class="logo-prev" id="logoPrevBox">
+      ${st.logo ? `<img id="logoPrev" src="${st.logo}" alt="NY AKAMA">`
+                : `<div class="placeholder">Logo par défaut NY AKAMA (SVG)</div>
+                   <svg viewBox="0 0 400 400" style="width:150px;height:150px;margin:8px auto;color:#0a5f4f"><use href="#nyakamaLogo"/></svg>`}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn sm ghost" id="logoPick" style="flex:1">📷 Téléverser mon logo</button>
+      <button class="btn sm danger" id="logoDel" style="flex:1;${st.logo?'':'display:none'}">🗑 Retirer</button>
+    </div>
+    <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
+
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+
+    <div class="frm">
+      <div><label>Nom de la société</label><input id="stName" value="${esc(st.company)}"></div>
+      <div class="two">
+        <div><label>Téléphone (ticket)</label><input id="stPhone" value="${esc(st.phone)}"></div>
+        <div><label>Devise</label><input id="stCur" value="${esc(st.currency)}"></div>
+      </div>
+      <div><label>Seuil d'alerte par défaut</label><input id="stSeuil" type="number" value="${esc(st.seuil)}"></div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+
+    <h3 style="font-size:14px">👤 Utilisateur connecté</h3>
+    <div class="row" style="padding-top:6px">
+      <div class="thumb ph">👤</div>
+      <div class="info"><b>${esc(currentUser?.email||'—')}</b><small>Session Firebase active</small></div>
+      <button class="btn sm danger" id="stLogout">Se déconnecter</button>
+    </div>
+
+    <h3 style="margin-top:18px;font-size:14px">➕ Ajouter un utilisateur</h3>
+    <p style="color:var(--muted);font-size:12.5px;margin:0 0 10px">
+      Créez un compte pour un employé. Il pourra se connecter avec cet email et ce mot de passe.
+    </p>
+    <div class="frm">
+      <div><label>Email du nouvel utilisateur</label><input type="email" id="nuEmail" placeholder="employe@nyakama.com"></div>
+      <div><label>Mot de passe (6 car. min.)</label><input type="password" id="nuPwd" placeholder="••••••••"></div>
+      <div class="login-error" id="nuErr"></div>
+      <button class="btn acc blk" id="nuOk">＋ Créer cet utilisateur</button>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+
+    <h3 style="font-size:14px">☁️ Configuration Firebase (${isFirebase?'✅ connecté':'⚠️ non configuré'})</h3>
+    <div class="frm">
+      <div><label>apiKey</label><input id="fbApi" value="${esc(st.fb.apiKey)}"></div>
+      <div><label>authDomain</label><input id="fbAuth" value="${esc(st.fb.authDomain)}"></div>
+      <div><label>projectId</label><input id="fbProj" value="${esc(st.fb.projectId)}"></div>
+      <div><label>storageBucket</label><input id="fbStore" value="${esc(st.fb.storageBucket)}"></div>
+      <div><label>messagingSenderId</label><input id="fbMsg" value="${esc(st.fb.messagingSenderId)}"></div>
+      <div><label>appId</label><input id="fbApp" value="${esc(st.fb.appId)}"></div>
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn ghost" data-act="closeModal">Fermer</button>
+      <button class="btn pri" id="stSave">💾 Enregistrer</button>
+    </div>
+    <button class="btn ghost blk" id="stDemo" style="margin-top:10px">🧪 Charger des données de démonstration</button>
+  `);
+
+  let newLogo = st.logo;
+  $('#logoPick').onclick = ()=>$('#logoFile').click();
+  $('#logoFile').onchange = async ev=>{
+    const f = ev.target.files[0]; if(!f) return;
+    try{
+      newLogo = await resizeImage(f, 1000, 0.9);
+      $('#logoPrevBox').innerHTML = `<img id="logoPrev" src="${newLogo}" alt="NY AKAMA">`;
+      $('#logoDel').style.display='inline-flex';
+      toast('Logo prêt — cliquez sur Enregistrer');
+    }catch(err){ toast('Image illisible'); }
+  };
+  $('#logoDel').onclick = ()=>{
+    newLogo = '';
+    $('#logoPrevBox').innerHTML = `<div class="placeholder">Logo par défaut NY AKAMA (SVG)</div>
+      <svg viewBox="0 0 400 400" style="width:150px;height:150px;margin:8px auto;color:#0a5f4f"><use href="#nyakamaLogo"/></svg>`;
+    $('#logoDel').style.display='none';
+  };
+
+  $('#stLogout').onclick = ()=>{ closeModal(); setTimeout(()=>$('#btnLogout').click(), 200); };
+
+  /* Créer un nouvel utilisateur (sans déconnecter l'admin) */
+  $('#nuOk').onclick = async ()=>{
+    const e = ($('#nuEmail').value||'').trim();
+    const p = $('#nuPwd').value||'';
+    const err = $('#nuErr');
+    err.classList.remove('on');
+    if(!e||!p){ err.textContent="Remplissez les deux champs."; err.classList.add('on'); return; }
+    if(p.length<6){ err.textContent="6 caractères minimum."; err.classList.add('on'); return; }
+    if(!auth){ err.textContent="Firebase Auth non configuré."; err.classList.add('on'); return; }
+    try{
+      // Utilise une app secondaire pour ne pas déconnecter l'admin
+      const cfg = S.settings.fb;
+      const secName = 'Secondary'+Date.now();
+      const secApp = firebase.initializeApp(cfg, secName);
+      const secAuth = secApp.auth();
+      await secAuth.createUserWithEmailAndPassword(e, p);
+      await secApp.delete();
+      err.style.background = '#dcfce7';
+      err.style.color = '#15803d';
+      err.textContent = '✅ Utilisateur créé : ' + e;
+      err.classList.add('on');
+      $('#nuEmail').value = '';
+      $('#nuPwd').value = '';
+      toast('Nouvel utilisateur créé');
+    }catch(ex){
+      err.style.background = '#fee2e2';
+      err.style.color = '#b91c1c';
+      err.textContent = frAuthError(ex.code);
+      err.classList.add('on');
+    }
+  };
+
+  $('#stSave').onclick = ()=>{
+    S.settings.company = $('#stName').value || 'NY AKAMA';
+    S.settings.phone   = $('#stPhone').value || '';
+    S.settings.currency= $('#stCur').value || 'FC';
+    S.settings.seuil   = num($('#stSeuil').value) || 10;
+    S.settings.logo    = newLogo || '';
+    const newFb = {
+      apiKey: $('#fbApi').value.trim(), authDomain: $('#fbAuth').value.trim(),
+      projectId: $('#fbProj').value.trim(), storageBucket: $('#fbStore').value.trim(),
+      messagingSenderId: $('#fbMsg').value.trim(), appId: $('#fbApp').value.trim()
+    };
+    const fbChanged = JSON.stringify(newFb) !== JSON.stringify(S.settings.fb);
+    S.settings.fb = newFb;
+    saveSettings();
+    pushSettings();
+    closeModal();
+    render();
+    toast('Paramètres & logo enregistrés');
+    if(fbChanged && S.settings.fb.apiKey){
+      toast('Rechargement de la configuration...');
+      setTimeout(()=>location.reload(), 1200);
+    }
+  };
+
+  $('#stDemo').onclick = ()=>{
+    if(!confirm('Charger des articles et clients de démonstration ?')) return;
+    const demo = [
+      {nom:'Eau minérale 50cl', qualite:'plastique', contenance:50, pv:500, pvDetail:500, pvGros:450, seuilGros:12, pr:250, stock:120},
+      {nom:'Eau minérale 1L', qualite:'plastique', contenance:100, pv:800, pvDetail:800, pvGros:720, seuilGros:12, pr:400, stock:80},
+      {nom:'Jus naturel 33cl', qualite:'verre', contenance:33, pv:1500, pvDetail:1500, pvGros:1350, seuilGros:10, pr:800, stock:60},
+      {nom:'Soda 33cl', qualite:'verre', contenance:33, pv:1200, pvDetail:1200, pvGros:1080, seuilGros:10, pr:600, stock:90},
+      {nom:'Eau gazeuse 1L', qualite:'verre', contenance:100, pv:1800, pvDetail:1800, pvGros:1620, seuilGros:8, pr:1000, stock:40}
+    ];
+    demo.forEach(d=>put('articles', Object.assign({id:uid(), image:'', seuil:10}, d)));
+    ['Mama Nzuzi','Papa Kabila','Boutique Espoir','Restaurant Le Palmier'].forEach(n=>put('clients', {id:uid(), nom:n}));
+    closeModal(); render(); toast('Données de démonstration chargées');
+  };
+};
+
+$('#btnSync').onclick = ()=>{
+  if(db) toast('☁️ Sauvegarde en ligne active');
+  else if(S.settings.fb.apiKey){ toast('Connexion en cours...'); initFirebase(); }
+  else toast('Configurez Firestore dans ⚙️ Paramètres');
+};
+
+$('#btnSaveVente').onclick = saveVente;
+
+/* =========================================================
+   DÉMARRAGE
+   ========================================================= */
+loadLocal();
+// Migrer automatiquement les anciens articles (pv → prix détail/gros)
+normalizeAllArticles();
+// Préparer l'écran de connexion avec le logo
+$('#loginLogo').innerHTML = logoHTML('100%');
+$('#loginCompany').textContent = S.settings.company || 'NY AKAMA';
+
+// Initialiser Firebase et Auth
+const ok = initFirebase();
+if(!ok){
+  // Firebase absent : l'utilisateur peut configurer Firebase depuis l'écran
+  // ou continuer localement sans perdre les données déjà présentes sur ce téléphone.
+  $('#loginScreen').classList.add('on');
+  $('#loginError').textContent = "Firebase n'est pas encore configuré. Vous pouvez le configurer ou continuer en mode hors ligne.";
+  $('#loginError').classList.add('on');
+  $('#loginSecureText').textContent = "☁️ Firebase pour le cloud • 📱 mode hors ligne disponible";
+}
+</script>
+</body>
+</html>
