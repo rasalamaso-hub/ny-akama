@@ -1,4 +1,10 @@
-const CACHE_NAME = 'ny-akama-v1';
-const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
-self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))); });
-self.addEventListener('fetch', (e) => { e.respondWith(caches.match(e.request).then((response) => response || fetch(e.request))); });
+self.addEventListener('install', (e) => {
+  e.waitUntil(self.skipWaiting());
+});
+self.addEventListener('activate', (e) => {
+  e.waitUntil(self.clients.claim());
+});
+// Cette ligne est OBLIGATOIRE pour Chrome Android
+self.addEventListener('fetch', (e) => {
+  // Un handler vide suffit pour valider l'installation
+});
