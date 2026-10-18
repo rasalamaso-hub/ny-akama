@@ -1,10 +1,14 @@
+const CACHE_NAME = 'ny-akama-v1';
+
 self.addEventListener('install', (e) => {
   e.waitUntil(self.skipWaiting());
 });
+
 self.addEventListener('activate', (e) => {
   e.waitUntil(self.clients.claim());
 });
-// Cette ligne est OBLIGATOIRE pour Chrome Android
+
+// Cette ligne est OBLIGATOIRE pour que Chrome Android accepte l'installation
 self.addEventListener('fetch', (e) => {
-  // Un handler vide suffit pour valider l'installation
+  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
