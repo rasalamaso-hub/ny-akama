@@ -1492,13 +1492,55 @@ function openCheckout(){
     w.addEventListener('input',upd);upd();
   });
 }
-function saveSale(){
-  const w=$('#sheet'),ls=cartLines();if(!w||!ls.length)return;
+/* Vente atomique : lit le stock réel dans Firestore, vérifie, diminue et enregistre la vente en une seule transaction. */
+async function commitSaleTx(s,ls){
+  const need={},noms={};
+  ls.forEach(l=>{need[l.lotId]=(need[l.lotId]||0)+num(l.qty);noms[l.lotId]=l.nom||'ce produit'});
+  const ids=Object.keys(need);
+  const obj=clone(s);
+  obj.uid=NY_UID;obj.vendeur=(NY_PROFILE&&NY_PROFILE.name)||obj.vendeur||'';obj.createdAt=Date.now();
+  await DBH.runTransaction(async tx=>{
+    const snaps=[];
+    for(const id of ids)snaps.push(await tx.get(DBH.collection('lots').doc(id)));
+    snaps.forEach((sn,i)=>{
+      const id=ids[i];
+      if(!sn.exists)throw new Error('STOCK:'+noms[id]+' n\u2019existe plus.');
+      const dispo=num(sn.data().qty);
+      if(dispo<need[id])throw new Error('STOCK:'+noms[id]+' : il ne reste que '+dispo+' en stock.');
+    });
+    snaps.forEach((sn,i)=>tx.update(sn.ref,{qty:num(sn.data().qty)-need[ids[i]]}));
+    tx.set(DBH.collection('sales').doc(obj.id),obj);
+  });
+  return obj;
+}
+let SALE_BUSY=false;
+async function saveSale(){
+  const w=$('#sheet'),ls=cartLines();if(!w||!ls.length||SALE_BUSY)return;
   const sub=ls.reduce((a,l)=>a+l.qty*l.pu,0),co=ls.reduce((a,l)=>a+l.qty*l.cu,0),rm=Math.min(num(val(w,'rm')),sub),tot=sub-rm;
   const no=Math.max(0,...Object.values(S.sales).map(s=>s.no||0))+1;
   const s={id:uid(),no,ts:Date.now(),vendeur:S.cfg.commercial.nom||'',signature:S.cfg.commercial.signature||'',date:today(),mode:UI.mode,client:val(w,'cl').trim(),pay:w._pay,recu:num(val(w,'rc')),lines:ls,total:tot,remise:rm,cout:co,ben:tot-co,marge:tot>0?(tot-co)/tot*100:0};
-  put('sales',s.id,s);
-  ls.forEach(l=>{const lot=S.lots[l.lotId];if(lot)put('lots',lot.id,{...lot,qty:Math.max(0,num(lot.qty)-l.qty)})});
+  if(DBH&&NY_UID){
+    SALE_BUSY=true;
+    const btn=w.querySelector('[data-act="sale-save"]');if(btn)btn.disabled=true;
+    toast('Enregistrement de la vente…');
+    try{
+      const saved=await commitSaleTx(s,ls);
+      S.sales[saved.id]=saved;
+      ls.forEach(l=>{const lot=S.lots[l.lotId];if(lot)S.lots[l.lotId]={...lot,qty:Math.max(0,num(lot.qty)-l.qty)}});
+    }catch(e){
+      SALE_BUSY=false;if(btn)btn.disabled=false;
+      const m=String((e&&e.message)||'');
+      if(m.indexOf('STOCK:')===0)toast('Vente refusée — '+m.slice(6)+' Le stock a été mis à jour.');
+      else if(e&&(e.code==='unavailable'||e.code==='deadline-exceeded'||e.code==='failed-precondition'))toast('Pas de connexion : la vente n\u2019a pas été enregistrée. Réessayez.');
+      else if(e&&e.code==='permission-denied')toast('Vente refusée : droits insuffisants.');
+      else toast('Vente non enregistrée : '+((e&&(e.code||e.message))||'erreur'));
+      return;
+    }
+    SALE_BUSY=false;
+  }else{
+    put('sales',s.id,s);
+    ls.forEach(l=>{const lot=S.lots[l.lotId];if(lot)put('lots',lot.id,{...lot,qty:Math.max(0,num(lot.qty)-l.qty)})});
+  }
   UI.cart={};closeSheet();render();showReceipt(s);
 }
 function showReceipt(s){
