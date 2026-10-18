@@ -417,6 +417,7 @@ button.datechip{font:inherit;color:inherit;cursor:pointer;text-align:left}
 </style>
 
 <div class="app">
+  <div id="ny-account" hidden><span id="ny-account-label"></span><button type="button" id="ny-logout">Déconnexion</button></div>
   <header class="top">
     <div class="logo" role="img" aria-label="Logo NY AKAMA"></div>
     <div class="brand"><b>NY AKAMA</b><span>Rhum arrangé · Madagascar</span></div>
@@ -437,10 +438,10 @@ button.datechip{font:inherit;color:inherit;cursor:pointer;text-align:left}
 #ny-auth{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px;background:var(--bg,#F4ECD8);color:var(--ink,#2A1A0F);font-family:system-ui,sans-serif}
 #ny-auth[hidden]{display:none!important}#ny-auth .auth-card{width:min(100%,420px);background:var(--surface,#FFFAEC);border:1px solid var(--line,#D9CBA8);border-radius:22px;padding:24px;box-shadow:0 15px 45px #0002}
 #ny-auth h1{font-size:26px;margin:0 0 6px}#ny-auth p{line-height:1.5;color:var(--muted,#76624B)}#ny-auth label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px}#ny-auth input{width:100%;font:inherit;padding:13px;border:1px solid var(--line,#D9CBA8);border-radius:10px;background:var(--bg,#F4ECD8);color:inherit}#ny-auth button{width:100%;border:0;border-radius:11px;padding:14px;margin-top:16px;background:var(--accent,#4E2C14);color:var(--on-accent,#FFF6E0);font:inherit;font-weight:700}#ny-auth .auth-error{color:#a3301f;white-space:pre-wrap;font-size:13px}#ny-auth .auth-foot{font-size:12px}
-#ny-account{position:fixed;right:12px;top:12px;z-index:9998;display:flex;gap:8px;align-items:center;font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--line);padding:6px 9px;border-radius:99px}#ny-account button{border:0;background:transparent;color:inherit;font-weight:700}
+#ny-account{display:flex;gap:10px;align-items:center;justify-content:flex-end;font-size:12px;color:var(--muted);background:var(--surface);border:1px solid var(--line);padding:6px 6px 6px 12px;border-radius:99px;margin:4px 0 6px auto;width:fit-content;max-width:100%}#ny-account span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#ny-account button{border:0;background:transparent;color:var(--ink,inherit);font-weight:700;padding:6px 10px;border-radius:99px;min-height:32px}
 </style>
 <div id="ny-auth" hidden><form class="auth-card" id="ny-login-form"><h1>NY AKAMA Pro</h1><p>Connectez-vous pour accéder à votre boutique et à vos données synchronisées.</p><label for="ny-email">Adresse e-mail</label><input id="ny-email" type="email" autocomplete="username" required><label for="ny-password">Mot de passe</label><input id="ny-password" type="password" autocomplete="current-password" required minlength="6"><button type="submit" id="ny-login-btn">Se connecter</button><div id="ny-auth-error" class="auth-error" role="alert"></div><p class="auth-foot">Les comptes sont créés par l’administrateur. Il n’y a pas d’inscription publique.</p></form></div>
-<div id="ny-account" hidden><span id="ny-account-label"></span><button type="button" id="ny-logout">Déconnexion</button></div>
+
 <script>
 /* ============ outils ============ */
 const $=(s,r=document)=>r.querySelector(s);
